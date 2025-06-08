@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Resume Match Evaluator</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>⚡ Resume Match Evaluator</h1>
+    <p class="subheading">Upload your resume and job description to see how well you match.</p>
+
+    <!-- Step 1: Match Form -->
+    <form method="POST" enctype="multipart/form-data">
+      <label for="resume">📄 Resume (PDF)</label>
+      <input type="file" name="resume" accept=".pdf" required>
+
+      <label for="jobdesc">🧾 Job Description (PDF)</label>
+      <input type="file" name="jobdesc" accept=".pdf" required>
+
+      <button type="submit" name="action" value="match">✅ Check Match</button>
+    </form>
+
+    {% if match_score %}
+      <div class="result">
+        <h2>✅ Match Score: <span>{{ match_score }}</span></h2>
+
+        <!-- Doughnut Chart -->
+        <div class="chart-wrapper">
+          <canvas id="scoreChart" width="250" height="250"></canvas>
+        </div>
+
+        <h3>❌ Missing Keywords:</h3>
+        <ul>
+          {% for word in missing_keywords %}
+            <li>{{ word }}</li>
+          {% endfor %}
+        </ul>
+
+        <!-- Bar Chart: Keyword match vs missing -->
+        <div class="bar-chart-wrapper">
+          <canvas id="keywordChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Step 2: Cover Letter Form -->
+      <form method="POST">
+        <input type="hidden" name="action" value="generate">
+
+        <h3>Generate Cover Letter</h3>
+
+        <label for="applicant_name">🧑 Your Name:</label>
+        <input type="text" name="applicant_name" required>
+
+        <label for="hiring_manager">👤 Hiring Manager's Name:</label>
+        <input type="text" name="hiring_manager" required>
+
+        <label for="job_title">📌 Job Title:</label>
+        <input type="text" name="job_title" required>
+
+        <label for="company_name">🏢 Company Name:</label>
+        <input type="text" name="company_name" required>
+
+        <button type="submit">📝 Generate Cover Letter</button>
+      </form>
+    {% endif %}
+
+    {% if cover_letter %}
+      <div class="cover-letter">
+        <h3>📝 Cover Letter:</h3>
+        <textarea readonly rows="10">{{ cover_letter }}</textarea>
+        <br>
+        <a href="/download?text={{ cover_letter | urlencode }}">
+          <button type="button">📥 Download Cover Letter</button>
+        </a>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Doughnut Chart Script -->
+  {% if match_score %}
+  <script>
+    const score = parseFloat("{{ match_score|replace('%','') }}");
+    const ctx = document.getElementById("scoreChart").getContext("2d");
+
+    const centerTextPlugin = {
+      id: 'centerText',
+      beforeDraw(chart) {
+        const { width, height } = chart;
+        const ctx = chart.ctx;
+        ctx.restore();
+        const fontSize = (height / 5).toFixed(2);
+        ctx.font = `${fontSize}px 'Segoe UI', sans-serif`;
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = '#FFD700';
+        const text = `${score}%`;
+        const textX = Math.round((width - ctx.measureText(text).width) / 2);
+        const textY = height / 2;
+        ctx.fillText(text, textX, textY);
+        ctx.save();
+      }
+    };
+
+    new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Match', 'Gap'],
+        datasets: [{
+          data: [score, 100 - score],
+          backgroundColor: ['#FFD700', '#333'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        cutout: '75%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              color: '#FFD700',
+              font: { size: 13 }
+            }
+          }
+        }
+      },
+      plugins: [centerTextPlugin]
+    });
+
+    // ✅ Bar chart logic
+    const totalKeywords = 10; // Change if you use a different number
+    const missingCount = {{ missing_keywords|length }};
+    const matchedCount = totalKeywords - missingCount;
+
+    new Chart(document.getElementById('keywordChart'), {
+      type: 'bar',
+      data: {
+        labels: ['Matched', 'Missing'],
+        datasets: [{
+          label: 'Keywords',
+          data: [matchedCount, missingCount],
+          backgroundColor: ['#FFD700', '#333'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            ticks: { color: '#FFD700' }
+          },
+          y: {
+            beginAtZero: true,
+            ticks: { color: '#FFD700' }
+          }
+        },
+        plugins: {
+          legend: { display: false }
+        }
+      }
+    });
+  </script>
+  {% endif %}
+</body>
+</html>

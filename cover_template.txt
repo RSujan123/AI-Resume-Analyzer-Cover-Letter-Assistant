@@ -1,0 +1,12 @@
+Dear {{ hiring_manager }},
+
+I am writing to express my interest in the {{ job_title }} position at {{ company_name }}. With my background in {{ skills }}, and experience outlined in my resume, I believe I would be a great fit for your team.
+
+In previous roles, I have worked on projects involving {{ experience_highlights }}, and I am confident my expertise aligns well with your job requirements.
+
+I am excited about the opportunity to contribute to {{ company_name }}'s mission and would welcome the chance to discuss further how I can support your goals.
+
+Thank you for considering my application.
+
+Sincerely,  
+{{ applicant_name }}
